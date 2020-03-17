@@ -48,12 +48,14 @@ namespace BlockRandomizer {
                 try {
                     int i = 0;
                     while (!string.IsNullOrEmpty(input)) {
+                        
                         input = input.Trim();
                         // argument enclosed by quotes
                         if (input[0] == '\"') {
                             int arg_start = input.IndexOf('\"');
                             int arg_end = input.NextIndexOf('\"', arg_start + 1);
                             string arg = input.IndexSubstring(arg_start, arg_end);
+                            arg = arg.Trim('\"');
                             input = input.IndexRemove(arg_start, arg_end);
                             input_args[i] = arg;
                             i++;
@@ -64,21 +66,23 @@ namespace BlockRandomizer {
 
                             if (arg_end == -1) {
                                 arg = input;
+                                input = input.Remove(0);
                             }
                             else {
                                 arg = input.IndexSubstring(0, arg_end);
+                                input = input.IndexRemove(0, arg_end);
                             }
-
-                            input = input.IndexRemove(0, arg_end);
+                            arg = arg.Trim();
                             input_args[i] = arg;
                             i++;
                         }
                     }
                 }
                 catch (Exception e) {
-                    Console.WriteLine("An error occured: {0}", e.Message);
+                    Console.WriteLine("An error occured while parsing arguments: {0}", e.Message);
                     continue;
                 }
+
 
 
                 for (int i = 0; i < input_args.Length; i++) {

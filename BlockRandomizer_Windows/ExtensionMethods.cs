@@ -12,7 +12,7 @@ namespace GeneratorExtensions {
         /// <param name="endIndex">The index where the substring will end (inclusive)</param>
         /// <returns>A substring in the given string</returns>
         public static string IndexSubstring(this string str, int startIndex, int endIndex) {
-            if(endIndex > startIndex) {
+            if(endIndex < startIndex) {
                 return "";
             }
             return str.Substring(startIndex, (endIndex - startIndex) + 1);
