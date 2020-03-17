@@ -5,17 +5,23 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using GeneratorExtensions;
+using Utilities;
 
 namespace BlockRandomizer {
 
     /// <summary>
     /// inputs: 
-    /// -base_block(string) 
-    /// -block_origin(string) 
+    /// -block(string) 
+    /// -block_origin_type(string) 
     /// -base_name_of_saves(string) 
-    /// -number_of_blocks_per_trial(int) 
-    /// -number_of_trials_to_generate(int) 
+    /// -number_of_blocks_per_file(int) 
+    /// -number_of_files(int) 
     /// -allow_consecutive_equal_values(int)
+    /// 
+    /// This program generates a number of files with randomized block contents repeated a certain number of times. Files are saved at
+    /// (Desktop: Trial Generator Files\Output_Trials) as base_name_of_saves plus a number. The block can be input directly in the
+    /// console, or be passed in in a file. The file can located anywhere or in the default location (Desktop: Trial Generator Files\Input_Blocks); if
+    /// it's located in the default location, only the name of the file needs to be passed in. This program assumes a block only contains unique values
     /// </summary>
     class TrialGenerator {
         static void Main(string[] args) {
@@ -107,7 +113,7 @@ namespace BlockRandomizer {
         }
 
         /// <summary>
-        /// 
+        /// Returns the block contents from a file or the console
         /// </summary>
         private static string GetContents(string file_info, InputOrigin input_origin) {
 
@@ -140,10 +146,11 @@ namespace BlockRandomizer {
         }
 
         /// <summary>
-        /// 
+        /// Takes a flag and returns an InputOrigin indicating
+        /// where the block values are going to come from.
         /// </summary>
-        /// <param name="flag"></param>
-        /// <returns></returns>
+        /// <param name="flag">a string containing an input origin flag</param>
+        /// <returns>InputOrigin indicating where the block values are going to come from</returns>
         private static InputOrigin GetPathType(string flag) {
             switch (flag) {
                 case "-file":
@@ -164,10 +171,14 @@ namespace BlockRandomizer {
         }
 
         /// <summary>
-        /// 
+        /// Creates an array of randomized block values. These values are only randomized within each block repetition, not across block repetitions.
+        /// Randomized blocks contain all of the values found in the original block.
         /// </summary>
-        /// <param name="contents"></param>
-        /// <returns></returns>
+        /// <param name="contents">Array containing the block values</param>
+        /// <param name="num_blocks">The number of times the block will be repeated</param>
+        /// <param name="allow_consecutive_repeats">Allow values to be repeated. Zero is false, anything else is true</param>
+        /// <param name="generator">a Random object</param>
+        /// <returns>An array of randomized block values</returns>
         private static string[] GetRandomizedContents(string[] contents, int num_blocks, int allow_consecutive_repeats, Random generator) {
             bool allow_consecutive_equal_values = allow_consecutive_repeats != 0 ? true : false;
 
@@ -175,6 +186,7 @@ namespace BlockRandomizer {
                 throw new ArgumentException("The number of blocks in a trial can't be less than 1");
             }
 
+            //total number of items in the file
             int size = contents.Length * num_blocks;
             string[] randomized_contents = new string[size];
 
@@ -183,6 +195,7 @@ namespace BlockRandomizer {
 
             for (int reps = 0; reps < num_blocks; reps++) {
 
+                // reset list of indices after pass through due to deletions
                 for (int i = 0; i < contents.Length; i++) {
                     indices.Add(i);
                 }
@@ -193,11 +206,11 @@ namespace BlockRandomizer {
                 indices.RemoveAt(random_position);                                    // remove the index into contents that we've already used
 
                 // check that the last element of previous block isn't same as first element of the
-                // next if were not allowing consecutive equal values
-                if (!allow_consecutive_equal_values && reps > 0) {
+                // next if we're not allowing consecutive equal values
+                if (!allow_consecutive_equal_values && reps > 1) {
                     if (randomized_contents[current_index] == randomized_contents[current_index - 1]) {
                         int new_index = generator.Next(0, current_index - 1);
-                        SwapItems(randomized_contents, current_index - 1, new_index);
+                        Utils.SwapItems(randomized_contents, current_index - 1, new_index);
                     }
                 }
 
@@ -217,6 +230,11 @@ namespace BlockRandomizer {
             return randomized_contents;
         }
 
+        /// <summary>
+        /// Saves a file and its contents to the programs default location (Desktop: Trial Generator Files\Output_Trials)
+        /// </summary>
+        /// <param name="filename">the name of the file</param>
+        /// <param name="contents">the contents of the file</param>
         private static void SaveContentsToFile(string filename, string[] contents) {
             
 
@@ -239,17 +257,8 @@ namespace BlockRandomizer {
         }
 
         /// <summary>
-        /// 
+        /// defines possible block origins
         /// </summary>
-        /// <param name="array"></param>
-        /// <param name="index1"></param>
-        /// <param name="index2"></param>
-        private static void SwapItems(string[] array, int index1, int index2) {
-            string temp = array[index1];
-            array[index1] = array[index2];
-            array[index2] = temp;
-        }
-
         private enum InputOrigin {
             DefaultPath,
             CustomPath,
