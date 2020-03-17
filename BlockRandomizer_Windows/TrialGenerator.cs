@@ -38,37 +38,77 @@ namespace BlockRandomizer {
                 }
                 Console.Write(Environment.NewLine);
 
-                Console.Write("Enter your inputs: ");
+                Console.Write("Enter your inputs (block/block path) (block_origin) (base name of saves) (number of block repetitions per file) (number of files) (allow consecutive equal values): ");
                 string input = Console.ReadLine();
-                string[] input_args = input.Split(' ');
 
-                if (input_args.Length != 6) {
-                    Console.WriteLine("An error occured: incorrect number of inputs");
+                string[] input_args = new string[6];
+
+                // Extract arguments from the string. An argument is anything enclosed by quotes 
+                // or separated by spaces but not enclosed by quotes
+                try {
+                    int i = 0;
+                    while (!string.IsNullOrEmpty(input)) {
+                        input = input.Trim();
+                        // argument enclosed by quotes
+                        if (input[0] == '\"') {
+                            int arg_start = input.IndexOf('\"');
+                            int arg_end = input.NextIndexOf('\"', arg_start + 1);
+                            string arg = input.IndexSubstring(arg_start, arg_end);
+                            input = input.IndexRemove(arg_start, arg_end);
+                            input_args[i] = arg;
+                            i++;
+                        }
+                        else {
+                            int arg_end = input.IndexOf(' ');
+                            string arg = "";
+
+                            if (arg_end == -1) {
+                                arg = input;
+                            }
+                            else {
+                                arg = input.IndexSubstring(0, arg_end);
+                            }
+
+                            input = input.IndexRemove(0, arg_end);
+                            input_args[i] = arg;
+                            i++;
+                        }
+                    }
+                }
+                catch (Exception e) {
+                    Console.WriteLine("An error occured: {0}", e.Message);
                     continue;
                 }
-                else {
 
-                    try {
-                        input_origin = GetPathType(input_args[1]);
-                    }
-                    catch (ArgumentException e) {
-                        Console.WriteLine("An error occured: {0}", e.Message);
-                        continue;
-                    }
 
-                    try {
-                        contents = GetContents(input_args[0], input_origin);
-                    }
-                    catch (Exception e) {
-                        Console.WriteLine("An error occured: {0}", e.Message);
+                for (int i = 0; i < input_args.Length; i++) {
+                    if (input_args[i] == null) {
+                        Console.WriteLine("An error occured: incorrect number of inputs");
                         continue;
                     }
                 }
 
-                int repetitions, num_blocks, allow_consecutive_repeats;
+                try {
+                    input_origin = GetPathType(input_args[1]);
+                }
+                catch (ArgumentException e) {
+                    Console.WriteLine("An error occured: {0}", e.Message);
+                    continue;
+                }
 
                 try {
-                    repetitions = Convert.ToInt32(input_args[4]);
+                    contents = GetContents(input_args[0], input_origin);
+                }
+                catch (Exception e) {
+                    Console.WriteLine("An error occured: {0}", e.Message);
+                    continue;
+                }
+
+
+                int num_files, num_blocks, allow_consecutive_repeats;
+
+                try {
+                    num_files = Convert.ToInt32(input_args[4]);
                     num_blocks = Convert.ToInt32(input_args[3]);
                     allow_consecutive_repeats = Convert.ToInt32(input_args[5]);
                 }
@@ -81,11 +121,13 @@ namespace BlockRandomizer {
 
                 Random generator = new Random();
 
-
-                for (int reps = 0; reps < repetitions; reps++) {
+                // create files with the given block specifications
+                for (int reps = 0; reps < num_files; reps++) {
                     try {
+                        //create file contents
                         string[] randomized_contents = GetRandomizedContents(space_split_contents, num_blocks, allow_consecutive_repeats, generator);
 
+                        // check that the desired save name doesn't already contain an extension
                         Regex check_extension = new Regex(@"\.");
                         string save_name = "";
 
@@ -99,6 +141,7 @@ namespace BlockRandomizer {
                             save_name = input_args[2];
                         }
 
+                        // save file
                         save_name += (reps + 1);
                         SaveContentsToFile(save_name, randomized_contents);
                     }
@@ -236,7 +279,7 @@ namespace BlockRandomizer {
         /// <param name="filename">the name of the file</param>
         /// <param name="contents">the contents of the file</param>
         private static void SaveContentsToFile(string filename, string[] contents) {
-            
+
 
             string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
             string directory = @"Trial Generator Files\Output_Trials";
